@@ -1,0 +1,35 @@
+version: '3.0'
+
+services:
+  grafana:
+    container_name: 'grafana'
+    platform: 'linux/amd64'
+    build:
+      context: ./.config
+      args:
+        grafana_image: ${GRAFANA_IMAGE:-grafana}
+        grafana_version: ${GRAFANA_VERSION:-10.2.0}
+        livereload_host: "https:\\/\\/${CODESPACE_NAME}-35729.app.github.dev"
+    ports:
+      - 3001:3000/tcp
+    volumes:
+      - ./dist:/var/lib/grafana/plugins/trafficcontrol-scenes
+      - ./provisioning:/etc/grafana/provisioning
+      - ./provisioning/custom.ini:/etc/grafana/grafana.ini
+    extra_hosts:
+    - "host.docker.internal:host-gateway"
+  # Test Prometheus
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prom_data:/prometheus
+
+volumes:
+  prom_data:
