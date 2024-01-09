@@ -21,7 +21,6 @@ export const PROMETHEUS_DATASOURCE_REF = {
 
 export const INFLUXDB_DATASOURCES_REF = {
   CACHE_STATS: {
-    // uid: 'P6127926DB38D28AA',
     uid: 'cache_stats',
     type: 'influxdb',
   },
