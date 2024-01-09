@@ -10,8 +10,7 @@ import {
   SceneTimePicker,
 } from '@grafana/scenes';
 import { INFLUXDB_DATASOURCES_REF } from '../../constants';
-
-const which = 'CDN_in_a_Box_Edge';
+import { CacheGroupCustomObject } from './CacheGroupCustomObject';
 
 export function getCacheGroupScene() {
   const timeRange = new SceneTimeRange({
@@ -19,108 +18,116 @@ export function getCacheGroupScene() {
     to: 'now',
   });
 
-  // Variable definition
-  //   const customVariable = new CustomVariable({
-  //     name: 'seriesToShow',
-  //     label: 'Series to show',
-  //     value: '__server_names',
-  //     query: 'Server Names : __server_names, House locations : __house_locations',
-  //   });
+  const defaultCacheGroupBandwidthQuery = {
+    refId: 'A',
+    query: 'SELECT sum(value) FROM "monthly"."bandwidth.1min" WHERE $timeFilter GROUP BY time(60s), cachegroup',
+    rawQuery: true,
+    resultFormat: 'time_series',
+    alias: '$tag_cachegroup',
+  };
 
-  // Query runner definition
-  const queryRunner1 = new SceneQueryRunner({
-    datasource: INFLUXDB_DATASOURCES_REF.CACHE_STATS,
-    queries: [
+  const defaultCacheGroupConnectionQuery = {
+    refId: 'A',
+    query: 'SELECT mean("value") FROM "measurement" WHERE $timeFilter GROUP BY time($__interval) fill(null)',
+    rawQuery: false,
+    resultFormat: 'time_series',
+    policy: 'monthly',
+    orderByTime: 'ASC',
+    groupBy: [
       {
-        refId: 'A',
-        query:
-          'SELECT sum(value) FROM "monthly"."bandwidth.1min" WHERE cachegroup=\'' +
-          // todo
-          which +
-          "' and $timeFilter GROUP BY time(60s), cachegroup",
-        rawQuery: true,
-        resultFormat: 'time_series',
-        alias: '$tag_cachegroup',
+        type: 'time',
+        params: ['$__interval'],
+      },
+      {
+        type: 'tag',
+        params: ['hostname::tag'],
+      },
+      {
+        type: 'fill',
+        params: ['null'],
       },
     ],
+    select: [
+      [
+        {
+          type: 'field',
+          params: ['value'],
+        },
+        {
+          type: 'mean',
+          params: [],
+        },
+      ],
+    ],
+    measurement: 'connections.1min',
+  };
+
+  const queryRunner1 = new SceneQueryRunner({
+    datasource: INFLUXDB_DATASOURCES_REF.CACHE_STATS,
+    queries: [defaultCacheGroupBandwidthQuery],
   });
 
   const queryRunner2 = new SceneQueryRunner({
     datasource: INFLUXDB_DATASOURCES_REF.CACHE_STATS,
-    queries: [
-      {
-        refId: 'A',
-        query: 'SELECT mean("value") FROM "measurement" WHERE $timeFilter GROUP BY time($__interval) fill(null)',
-        rawQuery: false,
-        resultFormat: 'time_series',
-        policy: 'monthly',
-        orderByTime: 'ASC',
-        tags: [
-          {
-            key: 'cachegroup::tag',
-            // TODO
-            value: which,
-            operator: '=',
-          },
-        ],
-        groupBy: [
-          {
-            type: 'time',
-            params: ['$__interval'],
-          },
-          {
-            type: 'tag',
-            params: ['hostname::tag'],
-          },
-          {
-            type: 'fill',
-            params: ['null'],
-          },
-        ],
-        select: [
-          [
-            {
-              type: 'field',
-              params: ['value'],
-            },
-            {
-              type: 'mean',
-              params: [],
-            },
-          ],
-        ],
-        measurement: 'connections.1min',
-      },
-    ],
+    queries: [defaultCacheGroupConnectionQuery],
   });
 
-  // Custom object definition
-  //   const customObject = new CustomSceneObject({
-  //     counter: 5,
-  //   });
+  const cacheGroupCustomObject = new CacheGroupCustomObject({
+    name: '',
+  });
 
-  // Query runner activation handler that will update query runner state when custom object state changes
-  //   queryRunner.addActivationHandler(() => {
-  //     const sub = customObject.subscribeToState((newState) => {
-  //       queryRunner.setState({
-  //         queries: [
-  //           {
-  //             ...queryRunner.state.queries[0],
-  //             seriesCount: newState.counter,
-  //           },
-  //         ],
-  //       });
-  //       queryRunner.runQueries();
-  //     });
+  queryRunner1.addActivationHandler(() => {
+    const sub = cacheGroupCustomObject.subscribeToState((newState) => {
+      queryRunner1.setState(
+        !!newState.name
+          ? {
+              queries: [
+                {
+                  ...queryRunner1.state.queries[0],
+                  query:
+                    'SELECT sum(value) FROM "monthly"."bandwidth.1min" WHERE cachegroup=\'' +
+                    newState.name +
+                    "' and $timeFilter GROUP BY time(60s), hostname",
+                  alias: '$tag_hostname',
+                },
+              ],
+            }
+          : {
+              queries: [defaultCacheGroupBandwidthQuery],
+            }
+      );
+      queryRunner1.runQueries();
 
-  //     return () => {
-  //       sub.unsubscribe();
-  //     };
-  //   });
+      queryRunner2.setState(
+        !!newState.name
+          ? {
+              queries: [
+                {
+                  ...queryRunner2.state.queries[0],
+                  tags: [
+                    {
+                      key: 'cachegroup::tag',
+                      value: newState.name,
+                      operator: '=',
+                    },
+                  ],
+                },
+              ],
+            }
+          : {
+              queries: [defaultCacheGroupConnectionQuery],
+            }
+      );
+      queryRunner2.runQueries();
+    });
+
+    return () => {
+      sub.unsubscribe();
+    };
+  });
 
   return new EmbeddedScene({
     $timeRange: timeRange,
-    // $variables: new SceneVariableSet({ variables: templatised ? [customVariable] : [] }),
     $data: queryRunner1,
     body: new SceneFlexLayout({
       direction: 'column',
@@ -145,9 +152,8 @@ export function getCacheGroupScene() {
       ],
     }),
     controls: [
-      //   new VariableValueSelectors({}),
       new SceneControlsSpacer(),
-      //   customObject,
+      cacheGroupCustomObject,
       new SceneTimePicker({ isOnCanvas: true }),
       new SceneRefreshPicker({
         intervals: ['5s', '1m', '1h'],

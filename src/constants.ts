@@ -33,3 +33,5 @@ export const INFLUXDB_DATASOURCES_REF = {
     type: 'influxdb',
   },
 };
+
+export const defaultCG = 'CDN_in_a_Box_Edge';
