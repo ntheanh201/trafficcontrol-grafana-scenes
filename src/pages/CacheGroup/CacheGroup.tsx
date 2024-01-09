@@ -4,10 +4,6 @@ import { ROUTES } from '../../constants';
 import { prefixRoute } from '../../utils/utils.routing';
 import { getCacheGroupScene } from './scene';
 
-const getTab1Scene = () => {
-  return getCacheGroupScene();
-};
-
 const getScene = () =>
   new SceneApp({
     pages: [
@@ -15,7 +11,7 @@ const getScene = () =>
         title: 'Cache Groups',
         url: prefixRoute(`${ROUTES.CacheGroup}`),
         hideFromBreadcrumbs: true,
-        getScene: getTab1Scene,
+        getScene: getCacheGroupScene,
       }),
     ],
   });
