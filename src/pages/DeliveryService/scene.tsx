@@ -5,51 +5,146 @@ import {
   SceneFlexLayout,
   SceneFlexItem,
   PanelBuilders,
-  VariableValueSelectors,
   SceneControlsSpacer,
-  SceneTimePicker,
   SceneRefreshPicker,
+  SceneTimePicker,
 } from '@grafana/scenes';
-import { PROMETHEUS_DATASOURCE_REF } from '../../constants';
-import { CustomSceneObject } from 'pages/Home/CustomSceneObject';
+import { INFLUXDB_DATASOURCES_REF } from '../../constants';
+import { DeliveryServiceCustomObject } from './DSCustomObject';
 
-export function getPrometheusScene() {
+export function getDeliveryServiceScene() {
   const timeRange = new SceneTimeRange({
     from: 'now-6h',
     to: 'now',
   });
 
-  // Query runner definition, using Grafana built-in TestData datasource
-  const queryRunner = new SceneQueryRunner({
-    datasource: PROMETHEUS_DATASOURCE_REF,
-    queries: [
-      {
-        refId: 'A',
-        expr: 'rate(prometheus_http_requests_total{}[5m])',
-        range: true,
-        format: 'time_series',
-      },
-    ],
-    maxDataPoints: 1887,
+  const defaultBandwidthQuery = {
+    refId: 'A',
+    query: `SELECT mean(value)*1000 FROM "monthly"."kbps.ds.1min" WHERE cachegroup = 'total'  and $timeFilter GROUP BY time(60s), deliveryservice ORDER BY asc`,
+    rawQuery: true,
+    resultFormat: 'time_series',
+    alias: '$tag_deliveryservice',
+  };
+
+  const defaultTPSQueries = [
+    {
+      refId: 'A',
+      query: `SELECT mean(value) FROM \"monthly\".\"tps_2xx.ds.1min\" WHERE $timeFilter AND deliveryservice='demo1' GROUP BY time(60s) ORDER BY asc`,
+      rawQuery: true,
+      resultFormat: 'time_series',
+      alias: '$tag_cachegroup',
+    },
+    {
+      refId: 'B',
+      query: `SELECT mean(value) FROM \"monthly\".\"tps_3xx.ds.1min\" WHERE $timeFilter AND deliveryservice='demo1' GROUP BY time(60s) ORDER BY asc`,
+      rawQuery: true,
+      resultFormat: 'time_series',
+      alias: '$tag_cachegroup',
+    },
+    {
+      refId: 'C',
+      query: `SELECT mean(value) FROM \"monthly\".\"tps_4xx.ds.1min\" WHERE $timeFilter AND deliveryservice='demo1' GROUP BY time(60s) ORDER BY asc`,
+      rawQuery: true,
+      resultFormat: 'time_series',
+      alias: '$tag_cachegroup',
+    },
+    {
+      refId: 'D',
+      query: `SELECT mean(value) FROM \"monthly\".\"tps_5xx.ds.1min\" WHERE $timeFilter AND deliveryservice='demo1' GROUP BY time(60s) ORDER BY asc`,
+      rawQuery: true,
+      resultFormat: 'time_series',
+      alias: '$tag_cachegroup',
+    },
+  ];
+
+  const defaultBandwidthByCacheGroupQuery = {
+    refId: 'A',
+    query: `SELECT mean(value)*1000 FROM "monthly"."kbps.cg.1min" WHERE cachegroup != 'all' and $timeFilter GROUP BY time(60s), cachegroup`,
+    rawQuery: true,
+    resultFormat: 'time_series',
+    alias: '$tag_cachegroup',
+  };
+
+  const queryRunner1 = new SceneQueryRunner({
+    datasource: INFLUXDB_DATASOURCES_REF.DELIVERYSERVICE_STATS,
+    queries: [defaultBandwidthQuery],
   });
 
-  // Custom object definition
-  const customObject = new CustomSceneObject({
-    counter: 5,
+  const queryRunner2 = new SceneQueryRunner({
+    datasource: INFLUXDB_DATASOURCES_REF.DELIVERYSERVICE_STATS,
+    queries: [...defaultTPSQueries],
   });
 
-  // Query runner activation handler that will update query runner state when custom object state changes
-  queryRunner.addActivationHandler(() => {
+  const queryRunner3 = new SceneQueryRunner({
+    datasource: INFLUXDB_DATASOURCES_REF.DELIVERYSERVICE_STATS,
+    queries: [defaultBandwidthByCacheGroupQuery],
+  });
+
+  const customObject = new DeliveryServiceCustomObject({
+    name: '',
+  });
+
+  queryRunner1.addActivationHandler(() => {
     const sub = customObject.subscribeToState((newState) => {
-      queryRunner.setState({
-        queries: [
-          {
-            ...queryRunner.state.queries[0],
-            seriesCount: newState.counter,
-          },
-        ],
-      });
-      queryRunner.runQueries();
+      queryRunner1.setState(
+        !!newState.name
+          ? {
+              queries: [
+                {
+                  ...queryRunner1.state.queries[0],
+                  query:
+                    'SELECT mean(value)*1000 FROM "monthly"."kbps.ds.1min" WHERE deliveryservice=\'' +
+                    newState.name +
+                    `' and cachegroup = 'total' and $timeFilter GROUP BY time(60s), deliveryservice ORDER BY asc`,
+                },
+              ],
+            }
+          : {
+              queries: [defaultBandwidthQuery],
+            }
+      );
+      queryRunner1.runQueries();
+
+      queryRunner2.setState(
+        !!newState.name
+          ? {
+              queries: [
+                {
+                  ...queryRunner2.state.queries[0],
+                  tags: [
+                    {
+                      key: 'cachegroup::tag',
+                      value: newState.name,
+                      operator: '=',
+                    },
+                  ],
+                },
+              ],
+            }
+          : {
+              queries: [...defaultTPSQueries],
+            }
+      );
+      queryRunner2.runQueries();
+
+      queryRunner3.setState(
+        !!newState.name
+          ? {
+              queries: [
+                {
+                  ...queryRunner3.state.queries[0],
+                  query:
+                    'SELECT mean(value)*1000 FROM "monthly"."kbps.cg.1min" WHERE deliveryservice=\'' +
+                    newState.name +
+                    "' and cachegroup != 'all' and $timeFilter GROUP BY time(60s), cachegroup",
+                },
+              ],
+            }
+          : {
+              queries: [defaultBandwidthByCacheGroupQuery],
+            }
+      );
+      queryRunner3.runQueries();
     });
 
     return () => {
@@ -57,22 +152,41 @@ export function getPrometheusScene() {
     };
   });
 
-  console.log('cacheQueryRunner: ', queryRunner);
-
   return new EmbeddedScene({
     $timeRange: timeRange,
-    // $variables: new SceneVariableSet({ variables: templatised ? [customVariable] : [] }),
-    $data: queryRunner,
+    $data: queryRunner1,
     body: new SceneFlexLayout({
+      direction: 'column',
       children: [
         new SceneFlexItem({
           minHeight: 300,
-          body: PanelBuilders.timeseries().setTitle('Prometheus').build(),
+          body: PanelBuilders.timeseries()
+            .setTitle('Bandwidth')
+            .setOption('legend', { showLegend: true, calcs: ['max'] })
+            .setUnit('Kbits')
+            .build(),
+        }),
+        new SceneFlexItem({
+          minHeight: 300,
+          body: PanelBuilders.timeseries()
+            .setTitle('TPS')
+            .setData(queryRunner2)
+            .setOption('legend', { showLegend: true, calcs: ['max'] })
+            .setCustomFieldConfig('spanNulls', true)
+            .build(),
+        }),
+        new SceneFlexItem({
+          minHeight: 300,
+          body: PanelBuilders.timeseries()
+            .setTitle('Bandwidth by CacheGroup')
+            .setData(queryRunner3)
+            .setOption('legend', { showLegend: true, calcs: ['max'] })
+            .setCustomFieldConfig('spanNulls', true)
+            .build(),
         }),
       ],
     }),
     controls: [
-      new VariableValueSelectors({}),
       new SceneControlsSpacer(),
       customObject,
       new SceneTimePicker({ isOnCanvas: true }),

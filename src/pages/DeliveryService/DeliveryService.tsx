@@ -2,19 +2,16 @@ import React, { useMemo } from 'react';
 import { SceneApp, SceneAppPage } from '@grafana/scenes';
 import { ROUTES } from '../../constants';
 import { prefixRoute } from '../../utils/utils.routing';
-import { getPrometheusScene } from './scene';
+import { getDeliveryServiceScene } from './scene';
 
 const getScene = () =>
   new SceneApp({
     pages: [
       new SceneAppPage({
-        title: 'Prometheus',
-        subTitle: 'This scene showcases a basic tabs functionality.',
+        title: 'Delivery Services',
         url: prefixRoute(`${ROUTES.DeliveryService}`),
         hideFromBreadcrumbs: true,
-        getScene: () => {
-          return getPrometheusScene();
-        },
+        getScene: getDeliveryServiceScene,
       }),
     ],
   });

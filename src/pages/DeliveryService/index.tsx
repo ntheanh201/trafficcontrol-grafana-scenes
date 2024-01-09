@@ -1,1 +1,1 @@
-export * from './DeliveryServiceScene';
+export * from './DeliveryService';
