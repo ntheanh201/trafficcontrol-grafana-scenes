@@ -29,31 +29,27 @@ export function getDeliveryServiceScene() {
   const defaultTPSQueries = [
     {
       refId: 'A',
-      query: `SELECT mean(value) FROM \"monthly\".\"tps_2xx.ds.1min\" WHERE $timeFilter AND deliveryservice='demo1' GROUP BY time(60s) ORDER BY asc`,
+      query: `SELECT mean(value) FROM \"monthly\".\"tps_2xx.ds.1min\" WHERE $timeFilter GROUP BY time(60s) ORDER BY asc`,
       rawQuery: true,
       resultFormat: 'time_series',
-      alias: '$tag_cachegroup',
     },
     {
       refId: 'B',
-      query: `SELECT mean(value) FROM \"monthly\".\"tps_3xx.ds.1min\" WHERE $timeFilter AND deliveryservice='demo1' GROUP BY time(60s) ORDER BY asc`,
+      query: `SELECT mean(value) FROM \"monthly\".\"tps_3xx.ds.1min\" WHERE $timeFilter GROUP BY time(60s) ORDER BY asc`,
       rawQuery: true,
       resultFormat: 'time_series',
-      alias: '$tag_cachegroup',
     },
     {
       refId: 'C',
-      query: `SELECT mean(value) FROM \"monthly\".\"tps_4xx.ds.1min\" WHERE $timeFilter AND deliveryservice='demo1' GROUP BY time(60s) ORDER BY asc`,
+      query: `SELECT mean(value) FROM \"monthly\".\"tps_4xx.ds.1min\" WHERE $timeFilter GROUP BY time(60s) ORDER BY asc`,
       rawQuery: true,
       resultFormat: 'time_series',
-      alias: '$tag_cachegroup',
     },
     {
       refId: 'D',
-      query: `SELECT mean(value) FROM \"monthly\".\"tps_5xx.ds.1min\" WHERE $timeFilter AND deliveryservice='demo1' GROUP BY time(60s) ORDER BY asc`,
+      query: `SELECT mean(value) FROM \"monthly\".\"tps_5xx.ds.1min\" WHERE $timeFilter GROUP BY time(60s) ORDER BY asc`,
       rawQuery: true,
       resultFormat: 'time_series',
-      alias: '$tag_cachegroup',
     },
   ];
 
@@ -110,14 +106,40 @@ export function getDeliveryServiceScene() {
           ? {
               queries: [
                 {
-                  ...queryRunner2.state.queries[0],
-                  tags: [
-                    {
-                      key: 'cachegroup::tag',
-                      value: newState.name,
-                      operator: '=',
-                    },
-                  ],
+                  refId: 'A',
+                  query:
+                    'SELECT mean(value) FROM "monthly"."tps_2xx.ds.1min" WHERE $timeFilter AND deliveryservice=\'' +
+                    newState.name +
+                    "' GROUP BY time(60s) ORDER BY asc",
+                  rawQuery: true,
+                  resultFormat: 'time_series',
+                },
+                {
+                  refId: 'B',
+                  query:
+                    'SELECT mean(value) FROM "monthly"."tps_3xx.ds.1min" WHERE $timeFilter AND deliveryservice=\'' +
+                    newState.name +
+                    "' GROUP BY time(60s) ORDER BY asc",
+                  rawQuery: true,
+                  resultFormat: 'time_series',
+                },
+                {
+                  refId: 'C',
+                  query:
+                    'SELECT mean(value) FROM "monthly"."tps_4xx.ds.1min" WHERE $timeFilter AND deliveryservice=\'' +
+                    newState.name +
+                    "' GROUP BY time(60s) ORDER BY asc",
+                  rawQuery: true,
+                  resultFormat: 'time_series',
+                },
+                {
+                  refId: 'D',
+                  query:
+                    'SELECT mean(value) FROM "monthly"."tps_5xx.ds.1min" WHERE $timeFilter AND deliveryservice=\'' +
+                    newState.name +
+                    "' GROUP BY time(60s) ORDER BY asc",
+                  rawQuery: true,
+                  resultFormat: 'time_series',
                 },
               ],
             }
