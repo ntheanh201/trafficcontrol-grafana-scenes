@@ -24,6 +24,7 @@ export function getDeliveryServiceScene() {
     rawQuery: true,
     resultFormat: 'time_series',
     alias: '$tag_deliveryservice',
+    measurement: 'bw',
   };
 
   const defaultTPSQueries = [
@@ -32,6 +33,8 @@ export function getDeliveryServiceScene() {
       query: `SELECT mean(value) FROM \"monthly\".\"tps_2xx.ds.1min\" WHERE $timeFilter GROUP BY time(60s) ORDER BY asc`,
       rawQuery: true,
       resultFormat: 'time_series',
+      measurement: 'tps_2xx',
+      hide: false,
     },
     {
       refId: 'B',
@@ -92,6 +95,9 @@ export function getDeliveryServiceScene() {
                     'SELECT mean(value)*1000 FROM "monthly"."kbps.ds.1min" WHERE deliveryservice=\'' +
                     newState.name +
                     `' and cachegroup = 'total' and $timeFilter GROUP BY time(60s), deliveryservice ORDER BY asc`,
+                  tags: {
+                    deliveryservice: newState.name,
+                  },
                 },
               ],
             }
@@ -113,6 +119,11 @@ export function getDeliveryServiceScene() {
                     "' GROUP BY time(60s) ORDER BY asc",
                   rawQuery: true,
                   resultFormat: 'time_series',
+                  measurement: 'tps_2xx',
+                  hide: false,
+                  tags: {
+                    deliveryservice: newState.name,
+                  },
                 },
                 {
                   refId: 'B',
@@ -185,7 +196,7 @@ export function getDeliveryServiceScene() {
           body: PanelBuilders.timeseries()
             .setTitle('Bandwidth')
             .setOption('legend', { showLegend: true, calcs: ['max'] })
-            .setUnit('Kbits')
+            .setUnit('bps')
             .build(),
         }),
         new SceneFlexItem({
@@ -204,6 +215,7 @@ export function getDeliveryServiceScene() {
             .setData(queryRunner3)
             .setOption('legend', { showLegend: true, calcs: ['max'] })
             .setCustomFieldConfig('spanNulls', true)
+            .setUnit('bps')
             .build(),
         }),
       ],

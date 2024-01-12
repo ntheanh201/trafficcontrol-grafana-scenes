@@ -1,0 +1,1 @@
+docker run -p 8125:8125 -d --name telegraf --add-host=host.docker.internal:host-gateway -v $PWD/telegraf.conf:/etc/telegraf/telegraf.conf:ro telegraf

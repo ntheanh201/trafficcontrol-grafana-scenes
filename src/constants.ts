@@ -32,6 +32,10 @@ export const INFLUXDB_DATASOURCES_REF = {
     uid: 'daily_stats',
     type: 'influxdb',
   },
+  TELEGRAF: {
+    uid: 'telegraf',
+    type: 'influxdb'
+  }
 };
 
 export const defaultCG = 'CDN_in_a_Box_Edge';
