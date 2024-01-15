@@ -34,6 +34,16 @@ datasources:
       httpMode: GET
     secureJsonData:
       password: influxadminpassword
+  - name: telegraf
+    isDefault: false
+    url: http://host.docker.internal:8086
+    type: influxdb
+    user: influxadmin
+    jsonData:
+      dbName: telegraf
+      httpMode: GET
+    secureJsonData:
+      password: influxadminpassword
   - name: prometheus
     isDefault: false
     url: http://host.docker.internal:9090

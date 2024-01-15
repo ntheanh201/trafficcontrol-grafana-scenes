@@ -136,6 +136,7 @@ export function getCacheGroupScene() {
           minHeight: 300,
           body: PanelBuilders.timeseries()
             .setTitle('Total bandwidth (stacked)')
+            .setCustomFieldConfig('fillOpacity', 20)
             .setOption('legend', { showLegend: true, calcs: ['max'] })
             .setUnit('Kbits')
             .build(),
@@ -144,6 +145,7 @@ export function getCacheGroupScene() {
           minHeight: 300,
           body: PanelBuilders.timeseries()
             .setTitle('Connections (stacked)')
+            .setCustomFieldConfig('fillOpacity', 20)
             .setData(queryRunner2)
             .setOption('legend', { showLegend: true, calcs: ['max'] })
             .setCustomFieldConfig('spanNulls', true)
