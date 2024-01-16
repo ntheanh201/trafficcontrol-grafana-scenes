@@ -1,9 +1,6 @@
 apiVersion: 1
 
 datasources:
-  - name: gdev-testdata
-    isDefault: false
-    type: testdata
   - name: cache_stats
     isDefault: false
     url: http://host.docker.internal:8086
@@ -44,15 +41,3 @@ datasources:
       httpMode: GET
     secureJsonData:
       password: influxadminpassword
-  - name: prometheus
-    isDefault: false
-    url: http://host.docker.internal:9090
-    access: proxy
-    jsonData:
-      httpMethod: POST
-      manageAlerts: true
-      prometheusType: Prometheus
-      prometheusVersion: 2.44.0
-      cacheLevel: 'High'
-      disableRecordingRules: false
-      incrementalQueryOverlapWindow: 10m

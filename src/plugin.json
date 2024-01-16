@@ -20,14 +20,6 @@
   "includes": [
     {
       "type": "page",
-      "name": "Home",
-      "path": "/a/%PLUGIN_ID%/home",
-      "role": "Admin",
-      "addToNav": true,
-      "defaultNav": true
-    },
-    {
-      "type": "page",
       "name": "Cache Group",
       "path": "/a/%PLUGIN_ID%/cache-group",
       "role": "Admin",

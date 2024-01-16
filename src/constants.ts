@@ -3,16 +3,10 @@ import pluginJson from './plugin.json';
 export const PLUGIN_BASE_URL = `/a/${pluginJson.id}`;
 
 export enum ROUTES {
-  Home = 'home',
   CacheGroup = 'cache-group',
   DeliveryService = 'delivery-service',
   Server = 'server',
 }
-
-export const DATASOURCE_REF = {
-  uid: 'gdev-testdata',
-  type: 'testdata',
-};
 
 export const PROMETHEUS_DATASOURCE_REF = {
   uid: 'prometheus',
@@ -34,8 +28,6 @@ export const INFLUXDB_DATASOURCES_REF = {
   },
   TELEGRAF: {
     uid: 'telegraf',
-    type: 'influxdb'
-  }
+    type: 'influxdb',
+  },
 };
-
-export const defaultCG = 'CDN_in_a_Box_Edge';
