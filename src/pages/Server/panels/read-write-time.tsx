@@ -3,17 +3,26 @@ import { INFLUXDB_DATASOURCES_REF } from '../../../constants';
 import { ServerCustomObject } from '../ServerCustomObject';
 
 export const getReadWriteTimePanel = ({ customObject }: { customObject: ServerCustomObject }) => {
-  const defaultQuery = {
-    refId: 'A',
-    query: `SELECT mean(value) FROM "monthly"."bandwidth.1min" WHERE $timeFilter GROUP BY time(60s)`,
-    rawQuery: true,
-    resultFormat: 'time_series',
-    alias: 'bandwidth',
-  };
+  const defaultQueries = [
+    {
+      refId: 'A',
+      query: `SELECT non_negative_derivative(sum("read_time"), 10s) AS "read_time" FROM "diskio" WHERE $timeFilter GROUP BY time($interval) fill(null)`,
+      rawQuery: true,
+      resultFormat: 'time_series',
+      alias: '$col',
+    },
+    {
+      refId: 'B',
+      query: `SELECT non_negative_derivative(sum("write_time"), 10s) AS "write_time" FROM "diskio" WHERE $timeFilter GROUP BY time($interval) fill(null)`,
+      rawQuery: true,
+      resultFormat: 'time_series',
+      alias: '$col',
+    },
+  ];
 
   const qr = new SceneQueryRunner({
-    datasource: INFLUXDB_DATASOURCES_REF.CACHE_STATS,
-    queries: [defaultQuery],
+    datasource: INFLUXDB_DATASOURCES_REF.TELEGRAF,
+    queries: [...defaultQueries],
   });
 
   qr.addActivationHandler(() => {
@@ -32,7 +41,7 @@ export const getReadWriteTimePanel = ({ customObject }: { customObject: ServerCu
               ],
             }
           : {
-              queries: [defaultQuery],
+              queries: [...defaultQueries],
             }
       );
       qr.runQueries();
@@ -46,7 +55,8 @@ export const getReadWriteTimePanel = ({ customObject }: { customObject: ServerCu
   return PanelBuilders.timeseries()
     .setTitle('Read/Write Time')
     .setData(qr)
-    .setOption('legend', { showLegend: true, calcs: ['max'] })
-    .setUnit('kbps')
+    .setCustomFieldConfig('spanNulls', true)
+    .setCustomFieldConfig('fillOpacity', 20)
+    .setUnit('ns')
     .build();
 };

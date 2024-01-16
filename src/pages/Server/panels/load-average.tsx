@@ -5,14 +5,14 @@ import { ServerCustomObject } from '../ServerCustomObject';
 export const getLoadAveragePanel = ({ customObject }: { customObject: ServerCustomObject }) => {
   const defaultQuery = {
     refId: 'A',
-    query: `SELECT mean(value) FROM "monthly"."bandwidth.1min" WHERE $timeFilter GROUP BY time(60s)`,
+    query: `SELECT mean("load1") AS "load1", mean("load5") AS "load5", mean("load15") AS "load15" FROM "system" WHERE $timeFilter GROUP BY time($interval) fill(null)`,
     rawQuery: true,
     resultFormat: 'time_series',
-    alias: 'bandwidth',
+    alias: '$col',
   };
 
   const qr = new SceneQueryRunner({
-    datasource: INFLUXDB_DATASOURCES_REF.CACHE_STATS,
+    datasource: INFLUXDB_DATASOURCES_REF.TELEGRAF,
     queries: [defaultQuery],
   });
 
@@ -46,7 +46,7 @@ export const getLoadAveragePanel = ({ customObject }: { customObject: ServerCust
   return PanelBuilders.timeseries()
     .setTitle('Load Average')
     .setData(qr)
-    .setOption('legend', { showLegend: true, calcs: ['max'] })
-    .setUnit('kbps')
+    .setCustomFieldConfig('fillOpacity', 20)
+    .setCustomFieldConfig('spanNulls', true)
     .build();
 };

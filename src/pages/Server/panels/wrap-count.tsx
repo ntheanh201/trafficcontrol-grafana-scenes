@@ -5,10 +5,10 @@ import { ServerCustomObject } from '../ServerCustomObject';
 export const getWrapCountPanel = ({ customObject }: { customObject: ServerCustomObject }) => {
   const defaultQuery = {
     refId: 'A',
-    query: `SELECT mean(value) FROM "monthly"."bandwidth.1min" WHERE $timeFilter GROUP BY time(60s)`,
+    query: `SELECT mean("vol1_wrap_count") AS "vol1", mean("vol2_wrap_count") AS "vol2" FROM "monthly"."wrap_count.1min" WHERE $timeFilter GROUP BY time($interval) fill(null)`,
     rawQuery: true,
     resultFormat: 'time_series',
-    alias: 'bandwidth',
+    alias: '$col',
   };
 
   const qr = new SceneQueryRunner({
@@ -46,7 +46,7 @@ export const getWrapCountPanel = ({ customObject }: { customObject: ServerCustom
   return PanelBuilders.timeseries()
     .setTitle('Wrap Count')
     .setData(qr)
-    .setOption('legend', { showLegend: true, calcs: ['max'] })
-    .setUnit('kbps')
+    .setCustomFieldConfig('spanNulls', true)
+    .setCustomFieldConfig('fillOpacity', 20)
     .build();
 };

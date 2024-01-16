@@ -48,5 +48,6 @@ export const getCPUPanel = ({ customObject }: { customObject: ServerCustomObject
     .setData(qr)
     .setUnit('%')
     .setCustomFieldConfig('spanNulls', true)
+    .setCustomFieldConfig('fillOpacity', 20)
     .build();
 };

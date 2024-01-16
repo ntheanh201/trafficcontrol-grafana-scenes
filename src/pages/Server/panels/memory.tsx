@@ -5,14 +5,14 @@ import { ServerCustomObject } from '../ServerCustomObject';
 export const getMemoryPanel = ({ customObject }: { customObject: ServerCustomObject }) => {
   const defaultQuery = {
     refId: 'A',
-    query: `SELECT mean(value) FROM "monthly"."bandwidth.1min" WHERE $timeFilter GROUP BY time(60s)`,
+    query: `SELECT mean("used_percent") AS "mem_used" FROM "mem" WHERE $timeFilter GROUP BY time($interval) fill(null)`,
     rawQuery: true,
     resultFormat: 'time_series',
-    alias: 'bandwidth',
+    alias: '$col',
   };
 
   const qr = new SceneQueryRunner({
-    datasource: INFLUXDB_DATASOURCES_REF.CACHE_STATS,
+    datasource: INFLUXDB_DATASOURCES_REF.TELEGRAF,
     queries: [defaultQuery],
   });
 
@@ -46,7 +46,8 @@ export const getMemoryPanel = ({ customObject }: { customObject: ServerCustomObj
   return PanelBuilders.timeseries()
     .setTitle('Memory Usage')
     .setData(qr)
-    .setOption('legend', { showLegend: true, calcs: ['max'] })
-    .setUnit('kbps')
+    .setCustomFieldConfig('spanNulls', true)
+    .setCustomFieldConfig('fillOpacity', 20)
+    .setUnit('%')
     .build();
 };

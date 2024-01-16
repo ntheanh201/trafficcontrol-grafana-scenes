@@ -3,9 +3,9 @@ import { Redirect, Route, Switch } from 'react-router-dom';
 import { HomePage } from '../../pages/Home';
 import { prefixRoute } from '../../utils/utils.routing';
 import { ROUTES } from '../../constants';
-import { ServerPage } from 'pages/Server';
-import { DeliveryServicePage } from 'pages/DeliveryService';
-import { CacheGroupPage } from 'pages/CacheGroup';
+import { ServerPage } from '../../pages/Server';
+import { DeliveryServicePage } from '../../pages/DeliveryService';
+import { CacheGroupPage } from '../../pages/CacheGroup';
 
 export const Routes = () => {
   return (
