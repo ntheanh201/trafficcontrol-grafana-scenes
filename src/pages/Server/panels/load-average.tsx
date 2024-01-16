@@ -1,11 +1,10 @@
 import { PanelBuilders, SceneQueryRunner } from '@grafana/scenes';
 import { INFLUXDB_DATASOURCES_REF } from '../../../constants';
-import { ServerCustomObject } from '../ServerCustomObject';
 
-export const getLoadAveragePanel = ({ customObject }: { customObject: ServerCustomObject }) => {
+export const getLoadAveragePanel = () => {
   const defaultQuery = {
     refId: 'A',
-    query: `SELECT mean("load1") AS "load1", mean("load5") AS "load5", mean("load15") AS "load15" FROM "system" WHERE $timeFilter GROUP BY time($interval) fill(null)`,
+    query: `SELECT mean("load1") AS "load1", mean("load5") AS "load5", mean("load15") AS "load15" FROM "system" WHERE host='$hostname' AND $timeFilter GROUP BY time($interval) fill(null)`,
     rawQuery: true,
     resultFormat: 'time_series',
     alias: '$col',
@@ -14,33 +13,6 @@ export const getLoadAveragePanel = ({ customObject }: { customObject: ServerCust
   const qr = new SceneQueryRunner({
     datasource: INFLUXDB_DATASOURCES_REF.TELEGRAF,
     queries: [defaultQuery],
-  });
-
-  qr.addActivationHandler(() => {
-    const sub = customObject.subscribeToState((newState) => {
-      qr.setState(
-        !!newState.name
-          ? {
-              queries: [
-                {
-                  ...qr.state.queries[0],
-                  query:
-                    'SELECT mean(value) FROM "monthly"."bandwidth.1min" WHERE hostname= \'' +
-                    newState.name +
-                    `' and $timeFilter GROUP BY time(60s)`,
-                },
-              ],
-            }
-          : {
-              queries: [defaultQuery],
-            }
-      );
-      qr.runQueries();
-
-      return () => {
-        sub.unsubscribe();
-      };
-    });
   });
 
   return PanelBuilders.timeseries()

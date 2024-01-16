@@ -6,8 +6,10 @@ import {
   SceneControlsSpacer,
   SceneRefreshPicker,
   SceneTimePicker,
+  QueryVariable,
+  SceneVariableSet,
+  VariableValueSelectors,
 } from '@grafana/scenes';
-import { ServerCustomObject } from './ServerCustomObject';
 import {
   getBandwidthPanel,
   getConnectionsPanel,
@@ -18,6 +20,7 @@ import {
   getWrapCountPanel,
   getNetstatPanel,
 } from './panels';
+import { INFLUXDB_DATASOURCES_REF } from '../../constants';
 
 export function getServerScene() {
   const timeRange = new SceneTimeRange({
@@ -25,22 +28,27 @@ export function getServerScene() {
     to: 'now',
   });
 
-  const customObject = new ServerCustomObject({
-    name: '',
+  const hostname = new QueryVariable({
+    name: 'hostname',
+    datasource: INFLUXDB_DATASOURCES_REF.CACHE_STATS,
+    query: 'SHOW TAG VALUES ON "cache_stats" FROM "monthly"."bandwidth" with key = "hostname"',
   });
 
   return new EmbeddedScene({
     $timeRange: timeRange,
+    $variables: new SceneVariableSet({
+      variables: [hostname],
+    }),
     body: new SceneFlexLayout({
       direction: 'column',
       children: [
         new SceneFlexItem({
           height: 250,
-          body: getBandwidthPanel({ customObject }),
+          body: getBandwidthPanel(),
         }),
         new SceneFlexItem({
           height: 250,
-          body: getConnectionsPanel({ customObject }),
+          body: getConnectionsPanel(),
         }),
         new SceneFlexLayout({
           direction: 'row',
@@ -48,11 +56,11 @@ export function getServerScene() {
           children: [
             new SceneFlexItem({
               width: '50%',
-              body: getCPUPanel({ customObject }),
+              body: getCPUPanel(),
             }),
             new SceneFlexItem({
               width: '50%',
-              body: getMemoryPanel({ customObject }),
+              body: getMemoryPanel(),
             }),
           ],
         }),
@@ -62,11 +70,11 @@ export function getServerScene() {
           children: [
             new SceneFlexItem({
               width: '50%',
-              body: getLoadAveragePanel({ customObject }),
+              body: getLoadAveragePanel(),
             }),
             new SceneFlexItem({
               width: '50%',
-              body: getReadWriteTimePanel({ customObject }),
+              body: getReadWriteTimePanel(),
             }),
           ],
         }),
@@ -76,19 +84,19 @@ export function getServerScene() {
           children: [
             new SceneFlexItem({
               width: '50%',
-              body: getWrapCountPanel({ customObject }),
+              body: getWrapCountPanel(),
             }),
             new SceneFlexItem({
               width: '50%',
-              body: getNetstatPanel({ customObject }),
+              body: getNetstatPanel(),
             }),
           ],
         }),
       ],
     }),
     controls: [
+      new VariableValueSelectors({}),
       new SceneControlsSpacer(),
-      customObject,
       new SceneTimePicker({ isOnCanvas: true }),
       new SceneRefreshPicker({
         intervals: ['5s', '1m', '1h'],
