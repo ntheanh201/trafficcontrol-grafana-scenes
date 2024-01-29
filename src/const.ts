@@ -17,29 +17,36 @@
  * under the License.
  */
 
-import { PanelBuilders, SceneQueryRunner, VizPanel } from "@grafana/scenes";
-import { INFLUXDB_DATASOURCES_REF } from "const";
+import pluginJson from "./plugin.json";
 
-export const getMemoryPanel = (): VizPanel => {
-	const defaultQuery = {
-		alias: "$col",
-		query: "SELECT mean(\"used_percent\") AS \"mem_used\" FROM \"mem\" WHERE host='$hostname' AND $timeFilter" +
-			" GROUP BY time($interval) fill(null)",
-		rawQuery: true,
-		refId: "A",
-		resultFormat: "time_series",
-	};
+export const PLUGIN_BASE_URL = `/a/${pluginJson.id}`;
 
-	const qr = new SceneQueryRunner({
-		datasource: INFLUXDB_DATASOURCES_REF.telegraf,
-		queries: [defaultQuery],
-	});
+export const ROUTES = {
+	cacheGroup: "cache-group",
+	deliveryService: "delivery-service",
+	server: "server",
+};
 
-	return PanelBuilders.timeseries()
-		.setTitle("Memory Usage")
-		.setData(qr)
-		.setCustomFieldConfig("spanNulls", true)
-		.setCustomFieldConfig("fillOpacity", 20)
-		.setUnit("%")
-		.build();
+export const PROMETHEUS_DATASOURCE_REF = {
+	type: "prometheus",
+	uid: "prometheus",
+};
+
+export const INFLUXDB_DATASOURCES_REF = {
+	cacheStats: {
+		type: "influxdb",
+		uid: "cache_stats",
+	},
+	dailyStats: {
+		type: "influxdb",
+		uid: "daily_stats",
+	},
+	deliveryServiceStats: {
+		type: "influxdb",
+		uid: "deliveryservice_stats",
+	},
+	telegraf: {
+		type: "influxdb",
+		uid: "telegraf",
+	},
 };
